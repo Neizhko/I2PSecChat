@@ -55,31 +55,31 @@ public class MainFrameLogic {
         return currentUser;
     }
 
+    /**
+     * Setter method that sets current room.
+     * @param room current room as Room object.
+     */
     protected void setCurrentRoom(Room room) {
-        /**
-         * Setter method that sets current room.
-         * @param room current room as Room object.
-         */
         currentRoom = room;
     }
 
-    protected Room getCurrentRoom() {
-        /**
-         * Getter function that returns current room.
-         * @return current room as Room.
-         */
+    /**
+     * Getter function that returns current room.
+     * @return current room as Room.
+     */
+    Room getCurrentRoom() {
         return currentRoom;
     }
 
-    public List<Message> getMessagesList(int room_id) {
+    public List<Message> getMessagesList() {
         /**
          * Function that returns messages for current room.
          * TODO: Maybe we should find out how to protect this method from unauthorized access to hidden rooms.
          *       Hint: you can check is current user are participant of room from parameter.
          * @return List of Message object.
          */
+        int room_id = MainFrameLogic.getInstance().getCurrentRoom().getId();
         List<List<String>> messages = Database.getMessagesInRoom(room_id);
-
         return null;
     }
 
@@ -128,7 +128,7 @@ public class MainFrameLogic {
          * Function that returns Public Key of user.
          * @return public key as String.
          */
-        return null;
+        return "public key";
     }
 
     protected String getDate() {
@@ -166,12 +166,11 @@ public class MainFrameLogic {
          */
     }
 
-    @Deprecated
-    protected void setRoomAvatarPath(String roomAvatarPath) {
-        /**
-         * Method that adds room avatar path to the database.
-         * @param roomAvatarPath String object.
-         */
+    /**
+     * Method that adds room avatar path to the database.
+     * @param roomAvatarPath String object.
+     */
+    void setRoomAvatarPath(String roomAvatarPath) {
         Database.update_picture("room", 1, roomAvatarPath);
         String path = "";
         List<List<Object>> rooms = Database.getAllRooms();
@@ -188,12 +187,10 @@ public class MainFrameLogic {
         /** PLZ DO SOMETHING ABOUT !!!**/
     }
 
-    @Deprecated
-    protected void setUserAvatarPath(String userAvatarPath) {
-        /**
-         * Method that adds user avatar path to the database.
-         * @param userAvatarPath String object.
-         */
-
-    }
+    /**
+     * Method that adds user avatar path to the database.
+     * @param userAvatarPath String object.
+     * TODO: complete this method!
+     */
+    void setUserAvatarPath(String userAvatarPath) {}
 }

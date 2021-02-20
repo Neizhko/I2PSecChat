@@ -156,7 +156,11 @@ public class MainFrameController {
      */
     private void fillMessagesArea(List<Message> messagesList) {
         //TODO: add processing to convert Messages
-        MainFrameLogic.getInstance().getMessagesList();
+        //MainFrameLogic.getInstance().getMessagesList();
+        for (Message message : messagesList) {
+            Label label = new Label(message.message);
+            messagesVBox.getChildren().add(label);
+        }
     }
 
     /**
@@ -203,7 +207,7 @@ public class MainFrameController {
     void initialize() {
 
         fillDate(MainFrameLogic.getInstance().getDate());
-        //fillMessagesArea();
+        fillMessagesArea(MainFrameLogic.getInstance().getMessagesList());
         //fillParticipants();
         //fillRooms();
         //fillRoomAvatar(MainFrameLogic.getInstance().getCurrentRoom().getAvatar());

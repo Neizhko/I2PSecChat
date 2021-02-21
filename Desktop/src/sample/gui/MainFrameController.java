@@ -1,46 +1,35 @@
 package sample.gui;
 
-import com.sun.corba.se.impl.orb.DataCollectorBase;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 //import javafx.scene.text.Text;
+import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
-import javax.imageio.ImageIO;
-import javax.xml.crypto.Data;
 //import javax.swing.text.html.ImageView;
 import javafx.scene.image.ImageView;
 //import java.awt.*;
 import javafx.scene.image.Image;
-import sample.Database.Database;
 import sample.I2PConnector.I2PConnector;
-import sample.Main;
 import sample.Objects.Account;
 import sample.Objects.Message;
 import sample.Objects.Room;
-import sample.Objects.TypeOfMessage;
-import sample.Utils.Utils;
 
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.image.DataBuffer;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.reflect.Array;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * This class realizing controller for GUI of main frame.
@@ -83,6 +72,15 @@ public class MainFrameController {
     private TextField messageTextField;
 
     @FXML
+    private TextField roomNameTextField;
+
+    @FXML
+    private TextField nameTextField;
+
+    @FXML
+    private TextField keyTextField;
+
+    @FXML
     private ImageView userAvatarImageView;
 
     @FXML
@@ -92,7 +90,7 @@ public class MainFrameController {
     private VBox messagesVBox;
 
     @FXML
-    private VBox roomVBox;
+    private ListView<Label> roomVBox;
 
     @FXML
     private VBox participantsVBox;
@@ -124,7 +122,7 @@ public class MainFrameController {
     private void changeUserAvatar() {
         File userAvatar = chooseImage();
         if (userAvatar != null) {
-            System.out.print("Opening file..." + userAvatar.getPath());
+            System.out.println("Opening file..." + userAvatar.getPath());
             MainFrameLogic.getInstance().setUserAvatarPath(userAvatar.getPath());
         }
     }
@@ -157,32 +155,39 @@ public class MainFrameController {
      * @param messagesList: List of Message objects.
      */
     private void fillMessagesArea(List<Message> messagesList) {
+        messagesVBox.getChildren().clear();
         for (Message message : messagesList) {
             Label label = new Label(message.time + ", " + message.from.name + ": " + message.message);
             messagesVBox.getChildren().add(label);
         }
     }
-    private void fakeFillMessagesArea() {
-        for (int i = 0; i < 10; i++) {
-            Label label = new Label("DD.MM.HHHH" + ", " + "Userrr" + ": " + "message message message");
-            messagesVBox.getChildren().add(label);
-        }
-    }
+
     /**
      * Method filling GUI rooms area in UI with list of rooms.
      * @param roomsList: List of Room objects.
      */
     private void fillRooms(List<Room> roomsList) {
+        roomVBox.getItems().clear();
         for (Room room : roomsList) {
             Label label = new Label(room.getName());
-            roomVBox.getChildren().add(label);
+            roomVBox.getItems().add(label);
         }
+        roomVBox.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                String nameOfRoom = roomVBox.getSelectionModel().getSelectedItem().getText();
+                System.out.println("CLICKED on " + nameOfRoom);
+                for (Room room : roomsList) {
+                    if (room.getName().equals(nameOfRoom)) {
+                        MainFrameLogic.getInstance().setCurrentRoom(room);
+                    }
+                }
+            }
+        });
     }
-    private void fakeFillRooms() {
-        for (int i = 0; i < 10; i++) {
-            Label label = new Label("Room Name");
-            roomVBox.getChildren().add(label);
-        }
+
+    @FXML public void handleMouseClick(MouseEvent arg0) {
+        System.out.println("clicked on " + roomVBox.getSelectionModel().getSelectedItem());
     }
 
     /**
@@ -190,14 +195,9 @@ public class MainFrameController {
      * @param participantsList: List of Account objects.
      */
     private void fillParticipants(List<Account> participantsList) {
+        participantsVBox.getChildren().clear();
         for (Account account : participantsList) {
             Label label = new Label(account.name);
-            participantsVBox.getChildren().add(label);
-        }
-    }
-    private void fakeFillParticipants() {
-        for (int i = 0; i < 10; i++) {
-            Label label = new Label("Participant Name");
             participantsVBox.getChildren().add(label);
         }
     }
@@ -221,6 +221,14 @@ public class MainFrameController {
     }
 
     /**
+     * Method filling name of current room.
+     * @param roomName: String with name of room.
+     */
+    private void fillUserName(String roomName) {
+        this.Username.setText(roomName);
+    }
+
+    /**
      * Method filling date in GUI.
      * @param date: String with current date.
      */
@@ -233,11 +241,39 @@ public class MainFrameController {
     }
 
     void addParticipant() {
+        String partName = nameTextField.getText();
+        String partKey = keyTextField.getText();
 
+        if (partName != null && !partName.equals("")) {
+            if (partKey != null && !partKey.equals("")) {
+                Account account = new Account(partName, partKey);
+                MainFrameLogic.getInstance().addNewMember(account);
+            } else {
+                nameTextField.promptTextProperty().setValue("Неправильный ключ");
+            }
+        } else {
+            nameTextField.promptTextProperty().setValue("Неправильное имя");
+        }
     }
 
-    void createRoom() {
+    void createRoom() throws NoSuchAlgorithmException {
+        String roomName = roomNameTextField.getText();
+        if (roomName != null && !roomName.equals("")) {
+            List<String> listOfNames = new ArrayList<>();
 
+            for (Room room : MainFrameLogic.getInstance().getRoomsList()) {
+                listOfNames.add(room.getName());
+                //заменить на перебор всех имен и спавнивать с текстовым полем. Если хоть раз совпадет, то врейк
+            }
+            if (!listOfNames.contains(roomName)) {
+                Room room = new Room(roomName, "", 999999999, "sample/gui/resources/gear.png");
+                MainFrameLogic.getInstance().addNewRoom(room);
+            } else {
+                roomNameTextField.promptTextProperty().setValue("Такая комната уже есть");
+            }
+        } else {
+            roomNameTextField.promptTextProperty().setValue("Неправильное имя");
+        }
     }
 
     void fillUserAvatar(Image userAvatarImage) {
@@ -247,7 +283,9 @@ public class MainFrameController {
     }
 
     @FXML
-    void initialize() {
+    void update() {
+        System.out.println("LOG EVENT: screen updated");
+
         fillDate(MainFrameLogic.getInstance().getDate());
 
         fillMessagesArea(MainFrameLogic.getInstance().getMessagesList());
@@ -256,45 +294,67 @@ public class MainFrameController {
 
         fillRooms(MainFrameLogic.getInstance().getRoomsList());
 
-        //fillUserAvatar(MainFrameLogic.getInstance().getUserAvatar());
+        fillUserAvatar(MainFrameLogic.getInstance().getUserAvatar());
 
-        //fillRoomAvatar(MainFrameLogic.getInstance().getRoomAvatar());
+        fillRoomAvatar(MainFrameLogic.getInstance().getRoomAvatar());
 
-        //fillRoomName(MainFrameLogic.getInstance().getCurrentRoom().getName());
+        fillRoomName(MainFrameLogic.getInstance().getCurrentRoom().getName());
+
+        fillUserName(MainFrameLogic.getInstance().getCurrentUser().name);
+    }
+
+    @FXML
+    void initialize() {
+
+        MainFrameLogic.getInstance().setCurrentUser(I2PConnector.getMyAccount());
+        MainFrameLogic.getInstance().setCurrentRoom(MainFrameLogic.getInstance().getRoomsList().get(0));
+
+        update();
 
         sendButton.setOnAction(event -> {
             System.out.println("LOG EVENT: Button SEND was pressed");
             sendMessage();
+            update();
         });
 
         publicKeyButton.setOnAction(event -> {
             System.out.println("Button KEY was pressed");
             getPublicKey();
+            update();
         });
 
         changeRoomAvatarButton.setOnAction(event -> {
             System.out.println("Button CHANGE ROOM AVATAR was pressed");
             changeRoomAvatar();
+            update();
         });
 
         changeUserAvatarButton.setOnAction(event -> {
             System.out.println("Button CHANGE USER AVATAR was pressed");
             changeUserAvatar();
+            update();
         });
 
         leaveRoomButton.setOnAction(event -> {
             System.out.println("Button LEAVE ROOM was pressed");
             escapeCurrentRoom();
+            update();
         });
 
         addParticipantButton.setOnAction(event -> {
             System.out.println("Button ADD PARTICIPANT was pressed");
             addParticipant();
+            update();
         });
 
         createRoomButton.setOnAction(event -> {
             System.out.println("Button CREATE ROOM was pressed");
-            createRoom();
+            try {
+                createRoom();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            update();
         });
     }
 }
